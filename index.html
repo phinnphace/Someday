@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ff2e97">
+<title>Someday Binder</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: one phone-width column. Keep-something card on top, binder tabs under it, memos as sticker cards. */
+  color-scheme: light;
+  --ink:#2b0b52;
+  --paper:#fffafd;
+  --pink:#ff2e97;
+  --grape:#8f3bff;
+  --aqua:#00cfe0;
+  --lemon:#ffe53b;
+  --lime:#8df23f;
+  --tang:#ff9a3d;
+  --lilac:#cfa8ff;
+  --display:"Bagel Fat One","Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:var(--body);font-weight:500;font-size:1rem;line-height:1.45;color:var(--ink);
+  background-color:var(--grape);
+  background-image:
+    radial-gradient(circle,var(--lemon) 2.5px,transparent 3.5px),
+    radial-gradient(circle,#fff 2px,transparent 3px),
+    linear-gradient(165deg,var(--pink) 0%,var(--grape) 42%,#2f6bff 74%,var(--aqua) 100%);
+  background-size:46px 46px,46px 46px,100% 100%;
+  background-position:0 0,23px 23px,0 0;
+}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 56px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-direction:column;gap:4px}
+h1{
+  font-family:var(--display);font-weight:400;font-size:clamp(2.3rem,10vw,3.3rem);line-height:1;margin:0;
+  color:var(--lemon);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;
+  text-shadow:4px 4px 0 var(--ink);letter-spacing:.01em;text-wrap:balance;
+}
+.tagline{margin:0;color:#fff;font-weight:800;text-shadow:1px 1px 0 var(--ink)}
+.count{margin:0;color:#fff;font-weight:700;font-size:.9rem;text-shadow:1px 1px 0 var(--ink);font-variant-numeric:tabular-nums}
+
+.card{background:var(--paper);border:3px solid var(--ink);border-radius:18px;box-shadow:5px 5px 0 var(--ink);padding:14px}
+.stack{display:flex;flex-direction:column;gap:12px}
+h2{font-family:var(--display);font-weight:400;font-size:1.25rem;margin:0;line-height:1.1}
+label,.label{font-weight:800;font-size:.85rem}
+.field{display:flex;flex-direction:column;gap:6px}
+textarea,input[type=text],input[type=url],input[type=search],input[type=password]{
+  width:100%;font:inherit;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:12px;padding:10px 12px;
+}
+textarea{min-height:92px;resize:vertical}
+::placeholder{color:#7a5f99;opacity:1}
+.talkrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hearing{font-size:.9rem;font-style:italic;min-height:1.2em;flex:1 1 140px}
+.hint{font-size:.85rem;margin:0}
+
+button{font:inherit;color:var(--ink);cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  border:2px solid var(--ink);border-radius:999px;background:#fff;padding:6px 12px;font-weight:800;font-size:.9rem;min-height:38px;
+}
+.chip[aria-pressed="true"]{background:var(--chip,var(--lemon));box-shadow:2px 2px 0 var(--ink)}
+.btn{
+  border:3px solid var(--ink);border-radius:14px;padding:10px 16px;font-weight:800;background:#fff;min-height:44px;
+  box-shadow:3px 3px 0 var(--ink);text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;
+}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn.big{font-family:var(--display);font-weight:400;font-size:1.2rem;background:var(--pink);color:#fff;-webkit-text-stroke:.5px var(--ink);text-shadow:2px 2px 0 var(--ink);flex:1 1 auto}
+.btn.mic{background:var(--aqua)}
+.btn.mic[aria-pressed="true"]{background:var(--lime)}
+.btn.small{border-width:2px;border-radius:12px;padding:6px 12px;min-height:38px;font-size:.9rem;box-shadow:2px 2px 0 var(--ink)}
+.btn.open{background:var(--lemon)}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.msg{margin:0;font-weight:800;font-size:.9rem;min-height:1.3em}
+.syncline{background:var(--lemon);border:3px solid var(--ink);border-radius:14px;padding:8px 12px;font-weight:800;margin:0;font-size:.9rem}
+.syncline.ok{background:var(--lime)}
+[hidden]{display:none !important}
+
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 6px;scrollbar-width:thin}
+.tab{
+  flex:0 0 auto;border:2px solid var(--ink);border-bottom-width:4px;border-radius:12px 12px 4px 4px;padding:6px 12px;
+  font-weight:800;font-size:.9rem;background:var(--chip,#fff);min-height:40px;opacity:.72;
+}
+.tab[aria-pressed="true"]{opacity:1;box-shadow:2px 2px 0 var(--ink);transform:translateY(-2px)}
+
+.list{display:flex;flex-direction:column;gap:14px;margin:0;padding:0;list-style:none}
+.memo{display:flex;flex-direction:column;gap:10px;position:relative;padding-top:22px}
+.memo .tabtag{
+  position:absolute;top:-3px;left:14px;transform:translateY(-50%);background:var(--chip,#fff);border:2px solid var(--ink);
+  border-radius:999px;padding:2px 12px;font-weight:800;font-size:.8rem;max-width:calc(100% - 28px);overflow-wrap:anywhere;
+}
+.memo .text{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-weight:700;font-size:1.02rem;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:.82rem;font-weight:700}
+.pill{border:2px solid var(--ink);border-radius:999px;padding:1px 9px;background:#fff;font-weight:800}
+.pill.src{background:var(--lilac)}
+.pill.wait{background:var(--tang)}
+.pill.used{background:var(--lime)}
+.memo.is-used .text{text-decoration:line-through;text-decoration-thickness:2px;opacity:.75}
+.empty{text-align:center;font-weight:800}
+.star{display:inline-block;width:1em;height:1em;background:var(--lemon);vertical-align:-.12em;
+  clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+details summary{font-family:var(--display);font-size:1.25rem;cursor:pointer;line-height:1.2}
+details[open] summary{margin-bottom:12px}
+
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:0 0 0 3px var(--lemon)}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}.btn:active,.tab[aria-pressed="true"]{transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Someday Binder</h1>
+    <p class="tagline">Stuff you read now and want later, when you have what it takes.</p>
+    <p class="count" id="count" aria-live="polite"></p>
+  </header>
+
+  <p class="syncline" id="syncline" role="status"></p>
+
+  <section class="card stack" aria-labelledby="keep-title">
+    <h2 id="keep-title">Keep something</h2>
+    <div class="field">
+      <label for="memo-text">What is it, and what would you use it for?</label>
+      <textarea id="memo-text" placeholder="Reading this thing on IPv6 on How-To Geek, could use it for my server…"></textarea>
+      <div class="talkrow">
+        <button type="button" class="btn small mic" id="mic-btn" aria-pressed="false" hidden>Talk it in</button>
+        <span class="hearing" id="hearing" aria-live="polite"></span>
+      </div>
+      <p class="hint" id="mic-hint" hidden>To talk it in here, tap the box and use the microphone on your keyboard.</p>
+    </div>
+    <div class="field">
+      <label for="memo-url">Link to it (optional)</label>
+      <input type="url" id="memo-url" inputmode="url" autocomplete="off" placeholder="Paste the article link">
+    </div>
+    <div class="field">
+      <span class="label" id="tab-label">Which tab?</span>
+      <div class="chips" id="form-tabs" role="group" aria-labelledby="tab-label"></div>
+      <div class="row" id="new-tab-row" hidden>
+        <input type="text" id="new-tab-name" maxlength="30" placeholder="Name the new tab" aria-label="New tab name" style="flex:1 1 160px">
+        <button type="button" class="btn small" id="new-tab-add">Add tab</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="label" id="wait-label">What are you waiting on?</span>
+      <div class="chips" id="form-wait" role="group" aria-labelledby="wait-label"></div>
+    </div>
+    <div class="row">
+      <button type="button" class="btn big" id="save-btn">Keep it</button>
+      <button type="button" class="btn" id="cancel-btn" hidden>Cancel</button>
+    </div>
+    <p class="msg" id="msg" role="status"></p>
+  </section>
+
+  <section class="card stack" aria-labelledby="finder-title">
+    <h2 id="finder-title">Find it again</h2>
+    <div class="tabs" id="filter-tabs" role="group" aria-label="Tabs"></div>
+    <div class="field">
+      <span class="label" id="have-label">Show what I can use now that I have</span>
+      <div class="chips" id="filter-wait" role="group" aria-labelledby="have-label"></div>
+    </div>
+    <div class="field">
+      <label for="search-box">Search your memos</label>
+      <input type="search" id="search-box" placeholder="ipv6, docker, soldering…">
+    </div>
+    <div class="chips">
+      <button type="button" class="chip" id="used-toggle" aria-pressed="false" style="--chip:var(--lime)">Show the ones I already used</button>
+    </div>
+  </section>
+
+  <ul class="list" id="list" aria-live="polite"></ul>
+
+  <details class="card" id="settings">
+    <summary>Sync and backup</summary>
+    <div class="stack">
+      <p class="hint">Memos always save on this device. Connect your private GitHub repo to see the same binder on your other devices.</p>
+      <div class="field">
+        <label for="gh-owner">GitHub username</label>
+        <input type="text" id="gh-owner" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="phinnphace">
+      </div>
+      <div class="field">
+        <label for="gh-repo">Private repo name</label>
+        <input type="text" id="gh-repo" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="someday-binder-memos">
+      </div>
+      <div class="field">
+        <label for="gh-token">Access token for that repo</label>
+        <input type="password" id="gh-token" autocomplete="off" placeholder="github_pat_…">
+      </div>
+      <div class="row">
+        <button type="button" class="btn small open" id="gh-connect">Connect</button>
+        <button type="button" class="btn small" id="gh-sync" hidden>Sync now</button>
+        <button type="button" class="btn small" id="gh-disconnect" hidden>Disconnect this device</button>
+      </div>
+      <p class="msg" id="gh-msg" role="status"></p>
+      <div class="row">
+        <button type="button" class="btn small" id="export-btn">Save a backup file</button>
+        <label class="btn small" for="import-file">Load a backup file</label>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var WAIT = {time:"Time", money:"Money", setup:"The right setup"};
+  var DEFAULT_TABS = ["Server","Network","Home","Loose leaf"];
+  var LOOSE = "Loose leaf";
+  var COLORS = ["var(--pink)","var(--aqua)","var(--lemon)","var(--lime)","var(--tang)","var(--lilac)"];
+  var K_MEMOS="someday.memos", K_CFG="someday.sync", K_DRAFT="someday.draft", K_DIRTY="someday.dirty";
+  var API="https://api.github.com", FILE="memos.json";
+
+  var $ = function(id){ return document.getElementById(id); };
+  var ta=$("memo-text"), urlIn=$("memo-url"), saveBtn=$("save-btn"), cancelBtn=$("cancel-btn"),
+      msgEl=$("msg"), listEl=$("list"), countEl=$("count"), syncline=$("syncline"),
+      micBtn=$("mic-btn"), hearing=$("hearing"), micHint=$("mic-hint"), ghMsg=$("gh-msg");
+
+  var memos=[], editing=null, cfg=null, syncing=false, again=false;
+  var form={tab:null, wait:{}};
+  var filt={tab:"all", wait:null, used:false, q:""};
+  var extraTabs=[];
+
+  /* ---------- small helpers ---------- */
+  function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function lsSet(k,v){ try{ if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,v); return true; }catch(e){ return false; } }
+  function el(tag, attrs, kids){
+    var n=document.createElement(tag), k;
+    if(attrs) for(k in attrs){
+      if(k==="text") n.textContent=attrs[k];
+      else if(k==="on") for(var ev in attrs.on) n.addEventListener(ev, attrs.on[ev]);
+      else if(k==="style") n.style.cssText=attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    }
+    (kids||[]).forEach(function(c){ if(c) n.appendChild(c); });
+    return n;
+  }
+  function tabColor(name){
+    var h=0, s=String(name).toLowerCase();
+    for(var i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+    return COLORS[h%COLORS.length];
+  }
+  function live(){ return memos.filter(function(m){ return !m.deleted; }); }
+  function allTabs(){
+    var seen={}, out=[];
+    DEFAULT_TABS.concat(extraTabs, live().map(function(m){return m.tab;})).forEach(function(t){
+      t=String(t||"").trim(); if(!t) return;
+      var key=t.toLowerCase(); if(seen[key]) return; seen[key]=1; out.push(t);
+    });
+    return out;
+  }
+  function findUrl(text){ var m=String(text||"").match(/https?:\/\/[^\s<>"']+/i); return m?m[0]:""; }
+  function cleanUrl(u){
+    u=String(u||"").trim(); if(!u) return "";
+    if(!/^https?:\/\//i.test(u)) u="https://"+u;
+    try{ var x=new URL(u); return (x.protocol==="http:"||x.protocol==="https:") && x.hostname.indexOf(".")>0 ? x.href : ""; }
+    catch(e){ return ""; }
+  }
+  function detectSource(text,url){
+    var hay=(text+" "+url).toLowerCase();
+    if(/how[\s-]*to[\s-]*geek|howtogeek/.test(hay)) return "How-To Geek";
+    if(/\bxda\b|xda-developers/.test(hay)) return "XDA";
+    if(/hackaday|hack a day/.test(hay)) return "Hackaday";
+    try{ if(url) return new URL(url).hostname.replace(/^www\./,""); }catch(e){}
+    return "";
+  }
+  function guessTab(text){
+    var low=text.toLowerCase(), tabs=allTabs();
+    for(var i=0;i<tabs.length;i++){
+      if(tabs[i]!==LOOSE && low.indexOf(tabs[i].toLowerCase())>=0) return tabs[i];
+    }
+    return LOOSE;
+  }
+  function say(t){ msgEl.textContent=t||""; }
+  function now(){ return new Date().toISOString(); }
+  function newId(){ return "m-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8); }
+  function norm(d){
+    d=d||{};
+    var created=String(d.createdAt||"");
+    return {
+      id:String(d.id||newId()), text:String(d.text||""), url:cleanUrl(d.url), source:String(d.source||""),
+      tab:String(d.tab||LOOSE), waiting:Array.isArray(d.waiting)?d.waiting.filter(function(w){return WAIT[w];}):[],
+      used:!!d.used, createdAt:created, updatedAt:String(d.updatedAt||created), deleted:!!d.deleted
+    };
+  }
+
+  /* ---------- this device's copy ---------- */
+  function loadLocal(){
+    try{ var raw=JSON.parse(lsGet(K_MEMOS)||"[]"); memos=Array.isArray(raw)?raw.map(norm):[]; }catch(e){ memos=[]; }
+    try{ cfg=JSON.parse(lsGet(K_CFG)||"null"); }catch(e){ cfg=null; }
+    if(cfg && !(cfg.owner && cfg.repo && cfg.token)) cfg=null;
+  }
+  function saveLocal(){
+    if(!lsSet(K_MEMOS, JSON.stringify(memos))) say("This browser won't let the binder save on this device. Turn off private browsing and try again.");
+  }
+  function changed(){ saveLocal(); lsSet(K_DIRTY,"1"); renderAll(); sync(); }
+
+  /* ---------- keep-something form ---------- */
+  function renderFormChips(){
+    var box=$("form-tabs"); box.textContent="";
+    allTabs().forEach(function(t){
+      box.appendChild(el("button",{type:"button","class":"chip","aria-pressed":String(form.tab===t),style:"--chip:"+tabColor(t),text:t,
+        on:{click:function(){ form.tab=(form.tab===t?null:t); renderFormChips(); }}}));
+    });
+    box.appendChild(el("button",{type:"button","class":"chip",text:"+ New tab","aria-expanded":String(!$("new-tab-row").hidden),
+      on:{click:function(){ var r=$("new-tab-row"); r.hidden=!r.hidden; if(!r.hidden) $("new-tab-name").focus(); renderFormChips(); }}}));
+    var wb=$("form-wait"); wb.textContent="";
+    Object.keys(WAIT).forEach(function(k){
+      wb.appendChild(el("button",{type:"button","class":"chip","aria-pressed":String(!!form.wait[k]),style:"--chip:var(--tang)",text:WAIT[k],
+        on:{click:function(){ form.wait[k]=!form.wait[k]; renderFormChips(); }}}));
+    });
+  }
+  function addTab(){
+    var name=$("new-tab-name").value.trim().replace(/\s+/g," ");
+    if(!name) return;
+    var match=allTabs().filter(function(t){return t.toLowerCase()===name.toLowerCase();})[0];
+    if(!match){ extraTabs.push(name); match=name; }
+    form.tab=match; $("new-tab-name").value=""; $("new-tab-row").hidden=true;
+    renderFormChips(); renderFilters();
+  }
+  $("new-tab-add").addEventListener("click", addTab);
+  $("new-tab-name").addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); addTab(); } });
+
+  function saveDraft(){ lsSet(K_DRAFT, editing?"":ta.value); }
+  function resetForm(){
+    editing=null; ta.value=""; urlIn.value=""; form={tab:null, wait:{}};
+    saveBtn.textContent="Keep it"; cancelBtn.hidden=true; saveDraft(); renderFormChips();
+  }
+  cancelBtn.addEventListener("click", function(){ resetForm(); say(""); });
+  ta.addEventListener("input", saveDraft);
+
+  saveBtn.addEventListener("click", function(){
+    var text=ta.value.trim(), raw=urlIn.value.trim();
+    if(!text && !raw){ say("Say or type something first."); ta.focus(); return; }
+    var url=raw?cleanUrl(raw):cleanUrl(findUrl(text));
+    if(raw && !url){ say("That link doesn't look right. Paste the full address, or clear the box."); urlIn.focus(); return; }
+    var tab=form.tab||guessTab(text);
+    var fields={text:text, url:url, source:detectSource(text,url), tab:tab,
+                waiting:Object.keys(WAIT).filter(function(k){return form.wait[k];}), updatedAt:now()};
+    var was=editing;
+    if(editing){
+      memos=memos.map(function(m){ return m.id===editing ? Object.assign({}, m, fields) : m; });
+    }else{
+      fields.id=newId(); fields.used=false; fields.createdAt=fields.updatedAt; fields.deleted=false;
+      memos.unshift(fields);
+    }
+    resetForm(); say(was?"Changes saved.":"Kept under "+tab+"."); changed();
+  });
+
+  /* ---------- finder ---------- */
+  function renderFilters(){
+    var box=$("filter-tabs"); box.textContent="";
+    var pool=live().filter(function(m){return m.used===filt.used;});
+    var mk=function(key,label,color){
+      var n=key==="all"?pool.length:pool.filter(function(m){return m.tab===key;}).length;
+      box.appendChild(el("button",{type:"button","class":"tab","aria-pressed":String(filt.tab===key),style:"--chip:"+color,text:label+" "+n,
+        on:{click:function(){ filt.tab=key; renderFilters(); renderList(); }}}));
+    };
+    mk("all","Everything","#fff");
+    allTabs().forEach(function(t){ mk(t,t,tabColor(t)); });
+    var wb=$("filter-wait"); wb.textContent="";
+    Object.keys(WAIT).forEach(function(k){
+      wb.appendChild(el("button",{type:"button","class":"chip","aria-pressed":String(filt.wait===k),style:"--chip:var(--tang)",text:WAIT[k],
+        on:{click:function(){ filt.wait=(filt.wait===k?null:k); renderFilters(); renderList(); }}}));
+    });
+    $("used-toggle").setAttribute("aria-pressed", String(filt.used));
+  }
+  $("used-toggle").addEventListener("click", function(){ filt.used=!filt.used; renderFilters(); renderList(); });
+  $("search-box").addEventListener("input", function(e){ filt.q=e.target.value.trim().toLowerCase(); renderList(); });
+
+  function fmtDate(iso){
+    var d=new Date(iso); if(isNaN(d)) return "";
+    return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+  }
+  function patch(id, fields){
+    fields.updatedAt=now();
+    memos=memos.map(function(m){ return m.id===id ? Object.assign({}, m, fields) : m; });
+    changed();
+  }
+  function memoCard(m){
+    var meta=el("div",{"class":"meta"});
+    if(m.source) meta.appendChild(el("span",{"class":"pill src",text:m.source}));
+    m.waiting.forEach(function(w){ meta.appendChild(el("span",{"class":"pill wait",text:"Needs: "+WAIT[w].toLowerCase()})); });
+    if(m.used) meta.appendChild(el("span",{"class":"pill used",text:"Used"}));
+    var when=fmtDate(m.createdAt); if(when) meta.appendChild(el("span",{text:"Kept "+when}));
+
+    var tossBtn=el("button",{type:"button","class":"btn small",text:"Toss"});
+    var armed=false, timer=null;
+    tossBtn.addEventListener("click", function(){
+      if(!armed){ armed=true; tossBtn.textContent="Tap again to toss";
+        timer=setTimeout(function(){ armed=false; tossBtn.textContent="Toss"; },4000); return; }
+      clearTimeout(timer);
+      if(editing===m.id) resetForm();
+      patch(m.id,{deleted:true});
+    });
+    var acts=el("div",{"class":"row"},[
+      m.url ? el("a",{"class":"btn small open",href:m.url,target:"_blank",rel:"noopener noreferrer",text:"Open the article"}) : null,
+      el("button",{type:"button","class":"btn small",text:m.used?"Put it back":"I used this",on:{click:function(){ patch(m.id,{used:!m.used}); }}}),
+      el("button",{type:"button","class":"btn small",text:"Edit",on:{click:function(){
+        editing=m.id; ta.value=m.text; urlIn.value=m.url; form={tab:m.tab, wait:{}};
+        m.waiting.forEach(function(w){ form.wait[w]=true; });
+        saveBtn.textContent="Save changes"; cancelBtn.hidden=false; say("Editing a memo."); renderFormChips();
+        ta.focus(); ta.scrollIntoView({block:"center"});
+      }}}),
+      tossBtn
+    ]);
+    return el("li",{"class":"card memo"+(m.used?" is-used":"")},[
+      el("span",{"class":"tabtag",style:"--chip:"+tabColor(m.tab),text:m.tab}),
+      el("p",{"class":"text",text:m.text||m.url}),
+      meta, acts
+    ]);
+  }
+  function renderList(){
+    var all=live(), kept=all.filter(function(m){return !m.used;}).length, used=all.length-kept;
+    countEl.textContent=kept+" kept for later, "+used+" used";
+    listEl.textContent="";
+    var q=filt.q;
+    var show=all.filter(function(m){
+      return m.used===filt.used && (filt.tab==="all"||m.tab===filt.tab) &&
+             (!filt.wait||m.waiting.indexOf(filt.wait)>=0) &&
+             (!q||(m.text+" "+m.source+" "+m.tab+" "+m.url).toLowerCase().indexOf(q)>=0);
+    }).sort(function(a,b){ return a.createdAt<b.createdAt?1:(a.createdAt>b.createdAt?-1:0); });
+    if(!show.length){
+      var none=!all.length ? "Nothing kept yet. Your first memo lands here."
+        : (filt.used && !used ? "You haven't marked anything as used yet." : "Nothing here matches. Try another tab or clear the search.");
+      listEl.appendChild(el("li",{"class":"card empty"},[el("span",{"class":"star","aria-hidden":"true"}),el("span",{text:" "+none})]));
+      return;
+    }
+    show.forEach(function(m){ listEl.appendChild(memoCard(m)); });
+  }
+  function renderAll(){ renderFormChips(); renderFilters(); renderList(); }
+
+  /* ---------- sync with the private repo ---------- */
+  function status(t, ok){ syncline.textContent=t; syncline.className="syncline"+(ok?" ok":""); }
+  function headers(c){ return {"Accept":"application/vnd.github+json","Authorization":"Bearer "+c.token,"X-GitHub-Api-Version":"2022-11-28"}; }
+  function repoUrl(c){ return API+"/repos/"+encodeURIComponent(c.owner)+"/"+encodeURIComponent(c.repo); }
+  function b64encode(str){
+    var bytes=new TextEncoder().encode(str), bin="";
+    for(var i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+  function b64decode(b){
+    var bin=atob(String(b).replace(/\s/g,"")), bytes=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  function fail(kind){ var e=new Error(kind); e.kind=kind; return e; }
+  function check(r){
+    if(r.status===401) throw fail("auth");
+    if(r.status===403) throw fail("forbidden");
+    if(!r.ok) throw fail("http");
+    return r;
+  }
+  function pull(c){
+    return fetch(repoUrl(c)+"/contents/"+FILE+"?t="+Date.now(), {headers:headers(c), cache:"no-store"}).then(function(r){
+      if(r.status===404) return {memos:[], sha:null};
+      return check(r).json().then(function(j){
+        var data;
+        try{ data=JSON.parse(b64decode(j.content)); }catch(e){ throw fail("badfile"); }
+        var list=Array.isArray(data)?data:(data&&Array.isArray(data.memos)?data.memos:[]);
+        return {memos:list.map(norm), sha:j.sha};
+      });
+    });
+  }
+  function stamp(m){ return m.updatedAt||m.createdAt||""; }
+  function merge(a,b){
+    var by={};
+    a.concat(b).forEach(function(m){ var cur=by[m.id]; if(!cur || stamp(m)>stamp(cur)) by[m.id]=m; });
+    return Object.keys(by).sort().map(function(k){ return norm(by[k]); });
+  }
+  function canon(list){ return JSON.stringify(list.map(norm).sort(function(x,y){ return x.id<y.id?-1:(x.id>y.id?1:0); })); }
+  function syncOnce(c, tries){
+    return pull(c).then(function(remote){
+      var merged=merge(memos, remote.memos);
+      var localChanged=canon(merged)!==canon(memos);
+      memos=merged; saveLocal(); if(localChanged) renderAll();
+      if(canon(merged)===canon(remote.memos)) return;
+      var body={message:"Update memos", content:b64encode(JSON.stringify({version:1, memos:merged}, null, 2)+"\n")};
+      if(remote.sha) body.sha=remote.sha;
+      return fetch(repoUrl(c)+"/contents/"+FILE, {method:"PUT", headers:headers(c), body:JSON.stringify(body)}).then(function(r){
+        if((r.status===409||r.status===422) && tries>0) return syncOnce(c, tries-1);
+        check(r);
+      });
+    });
+  }
+  function sync(){
+    if(!cfg){ status("Saved on this device only. Open Sync and backup below to connect your private repo."); return Promise.resolve(); }
+    if(syncing){ again=true; return Promise.resolve(); }
+    if(navigator.onLine===false){ status("Offline. Your memos are safe on this device and will sync when you're back online."); return Promise.resolve(); }
+    syncing=true; status("Syncing…");
+    return syncOnce(cfg, 2).then(function(){
+      lsSet(K_DIRTY,null);
+      status("In sync with "+cfg.owner+"/"+cfg.repo+".", true);
+    }).catch(function(e){
+      var k=e&&e.kind;
+      status(k==="auth" ? "GitHub rejected the access token. It may have expired. Make a new one and reconnect below."
+           : k==="forbidden" ? "The token can't write to that repo. It needs Contents set to Read and write."
+           : k==="badfile" ? "memos.json in the repo isn't readable, so nothing was overwritten. Fix or delete that file, then sync again."
+           : "Couldn't reach GitHub. Your memos are safe on this device and will sync next time.");
+    }).then(function(){
+      syncing=false;
+      if(again){ again=false; return sync(); }
+    });
+  }
+  function renderSyncForm(){
+    var on=!!cfg;
+    $("gh-owner").value=on?cfg.owner:$("gh-owner").value;
+    $("gh-repo").value=on?cfg.repo:$("gh-repo").value;
+    $("gh-token").value="";
+    $("gh-token").placeholder=on?"Saved on this device":"github_pat_…";
+    $("gh-connect").textContent=on?"Reconnect":"Connect";
+    $("gh-sync").hidden=!on; $("gh-disconnect").hidden=!on;
+  }
+  $("gh-connect").addEventListener("click", function(){
+    var c={owner:$("gh-owner").value.trim(), repo:$("gh-repo").value.trim(), token:$("gh-token").value.trim()||(cfg?cfg.token:"")};
+    if(!c.owner||!c.repo||!c.token){ ghMsg.textContent="Fill in all three boxes first."; return; }
+    ghMsg.textContent="Checking…";
+    fetch(repoUrl(c), {headers:headers(c), cache:"no-store"}).then(function(r){
+      if(r.status===404) throw fail("notfound");
+      return check(r).json();
+    }).then(function(info){
+      cfg=c; lsSet(K_CFG, JSON.stringify(cfg)); renderSyncForm();
+      ghMsg.textContent=info && info.private===false
+        ? "Connected, but that repo is public. Anyone could read your memos there. Make it private in the repo's settings."
+        : "Connected.";
+      return sync();
+    }).catch(function(e){
+      var k=e&&e.kind;
+      ghMsg.textContent = k==="notfound" ? "GitHub can't find that repo with this token. Check the username, the repo name, and that the token covers this repo."
+        : k==="auth" ? "GitHub rejected that token. Copy it again, or make a new one."
+        : k==="forbidden" ? "That token isn't allowed to use this repo."
+        : "Couldn't reach GitHub. Check your connection and try again.";
+    });
+  });
+  $("gh-sync").addEventListener("click", function(){ sync(); });
+  $("gh-disconnect").addEventListener("click", function(){
+    cfg=null; lsSet(K_CFG,null); renderSyncForm(); ghMsg.textContent="Disconnected. Memos stay on this device."; sync();
+  });
+
+  /* ---------- backup file ---------- */
+  $("export-btn").addEventListener("click", function(){
+    var blob=new Blob([JSON.stringify({version:1, memos:memos}, null, 2)], {type:"application/json"});
+    var a=el("a",{href:URL.createObjectURL(blob), download:"someday-binder-backup-"+now().slice(0,10)+".json"});
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+    ghMsg.textContent="Backup file saved to your downloads.";
+  });
+  $("import-file").addEventListener("change", function(e){
+    var f=e.target.files && e.target.files[0]; if(!f) return;
+    f.text().then(function(t){
+      var data=JSON.parse(t);
+      var list=Array.isArray(data)?data:(data&&Array.isArray(data.memos)?data.memos:null);
+      if(!list) throw new Error("shape");
+      var before=live().length;
+      memos=merge(memos, list.map(norm));
+      ghMsg.textContent="Backup loaded. "+(live().length-before)+" memos added.";
+      changed();
+    }).catch(function(){ ghMsg.textContent="That file isn't a Someday Binder backup."; })
+      .then(function(){ e.target.value=""; });
+  });
+
+  /* ---------- talking ---------- */
+  (function(){
+    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){ micHint.hidden=false; return; }
+    var rec=new SR(), listening=false;
+    rec.continuous=false; rec.interimResults=true; rec.lang=navigator.language||"en-US";
+    function setOn(v){ listening=v; micBtn.setAttribute("aria-pressed",String(v)); micBtn.textContent=v?"Stop listening":"Talk it in"; if(!v) hearing.textContent=""; }
+    rec.onstart=function(){ setOn(true); };
+    rec.onend=function(){ setOn(false); };
+    rec.onresult=function(e){
+      var interim="";
+      for(var i=e.resultIndex;i<e.results.length;i++){
+        var r=e.results[i], words=r[0].transcript;
+        if(r.isFinal){ ta.value=(ta.value?ta.value.replace(/\s*$/," "):"")+words.trim(); saveDraft(); }
+        else interim+=words;
+      }
+      hearing.textContent=interim;
+    };
+    rec.onerror=function(e){
+      if(e.error==="not-allowed"||e.error==="service-not-allowed"){ micBtn.hidden=true; micHint.hidden=false; }
+      else if(e.error==="no-speech"){ say("Didn't hear anything. Tap Talk it in and try again."); }
+    };
+    micBtn.hidden=false;
+    micBtn.addEventListener("click", function(){
+      if(listening){ rec.stop(); return; }
+      try{ rec.start(); }catch(err){}
+    });
+  })();
+
+  /* ---------- shared in from another app ---------- */
+  function takeShare(){
+    var p=new URLSearchParams(location.search);
+    var t=(p.get("title")||"").trim(), x=(p.get("text")||"").trim(), u=(p.get("url")||"").trim();
+    if(!t && !x && !u) return false;
+    var link=cleanUrl(u)||cleanUrl(findUrl(x));
+    var rest=x.replace(findUrl(x),"").trim();
+    var parts=[]; if(t) parts.push(t); if(rest && rest!==t) parts.push(rest);
+    ta.value=parts.join("\n"); urlIn.value=link;
+    try{ history.replaceState(null,"",location.pathname); }catch(e){}
+    say("Shared in. Add what you'd use it for, then tap Keep it.");
+    return true;
+  }
+
+  /* ---------- start ---------- */
+  loadLocal();
+  if(!takeShare()){ var d=lsGet(K_DRAFT); if(d) ta.value=d; }
+  renderAll(); renderSyncForm(); sync();
+  window.addEventListener("online", function(){ sync(); });
+  document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible") sync(); });
+  if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
+})();
+</script>
+</body>
+</html>
